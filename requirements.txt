@@ -1,0 +1,8 @@
+flask
+pandas
+nltk
+urllib3
+bs4
+plotly
+gunicorn
+python-dotenv
