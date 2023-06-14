@@ -1,16 +1,14 @@
 from dotenv import load_dotenv
 import os
-import requests
 import json
 import datetime
 import logging
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
-import flask
-from flask import Flask, render_template  # for web app
-from urllib.request import urlopen, Request
+from flask import Flask, render_template, request
 import pandas as pd
-import plotly
 import plotly.express as px
+import requests
+
 # for graph plotting in website
 # NLTK VADER for sentiment analysis
 # import nltk
@@ -19,17 +17,12 @@ import plotly.express as px
 from nltk.sentiment import SentimentAnalyzer
 import nltk.sentiment.util
 
-# for extracting data from finviz
-
-
-load_dotenv()
-
 api_url = os.getenv("API-URL")
 api_key = os.getenv("API-Key")
 api_host = os.getenv("RapidAPI-Host")
 
-logging.basicConfig(filename='app_log.log',
-                    encoding='utf-8', level=logging.DEBUG)
+# logging.basicConfig(filename='app_log.log',
+#                     encoding='utf-8', level=logging.DEBUG)
 
 app = Flask(__name__)
 
@@ -46,12 +39,12 @@ def get_news_from_yahoo(ticker):
         "X-RapidAPI-Host": api_host
     }
 
-    # response = requests.get(api_url, headers=headers, params=querystring)
+    response = requests.get(api_url, headers=headers, params=querystring)
 
-    with open(file='sample.json', mode='r', encoding="utf8") as myfile:
-        data = myfile.read()
+    # with open(file='sample.json', mode='r', encoding="utf8") as myfile:
+    #     data = myfile.read()
 
-    respose_json = json.loads(data)
+    respose_json = response.json()
 
     articles = respose_json['item']
     data_dict = []
@@ -140,7 +133,7 @@ def sentiment():
 
     # logging.debug('In sentiment')
 
-    ticker = flask.request.form['ticker'].upper()
+    ticker = request.form['ticker'].upper()
 
     parsed_news_df = get_news_from_yahoo(ticker)
 
@@ -168,4 +161,4 @@ def sentiment():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=80, debug=True, load_dotenv=True)

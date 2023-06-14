@@ -1,8 +1,10 @@
 flask
+requests
 pandas
 nltk
-urllib3
+regex
 bs4
 plotly
 gunicorn
+numpy
 python-dotenv
