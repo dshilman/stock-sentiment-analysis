@@ -7,12 +7,13 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from flask import Flask, render_template, request
 import pandas as pd
 import plotly.express as px
+from plotly.utils import PlotlyJSONEncoder
 import requests
 
 # for graph plotting in website
 # NLTK VADER for sentiment analysis
-# import nltk
-# nltk.downloader.download('vader_lexicon')
+import nltk
+nltk.downloader.download('vader_lexicon')
 
 from nltk.sentiment import SentimentAnalyzer
 import nltk.sentiment.util
@@ -137,9 +138,6 @@ def sentiment():
 
     parsed_news_df = get_news_from_yahoo(ticker)
 
-    # news_table = get_news(ticker)
-
-    # parsed_news_df = parse_news(news_table)
 
 ##############################################################
     parsed_and_scored_news = score_news(parsed_news_df)
@@ -147,8 +145,8 @@ def sentiment():
     fig_daily = plot_daily_sentiment(parsed_and_scored_news, ticker)
 
     graphJSON_hourly = json.dumps(
-        fig_hourly, cls=plotly.utils.PlotlyJSONEncoder)
-    graphJSON_daily = json.dumps(fig_daily, cls=plotly.utils.PlotlyJSONEncoder)
+        fig_hourly, cls=PlotlyJSONEncoder)
+    graphJSON_daily = json.dumps(fig_daily, cls=PlotlyJSONEncoder)
 
     header = "Hourly and Daily Sentiment of {} Stock".format(ticker)
     description = """
