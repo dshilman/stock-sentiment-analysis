@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Stock Sentiment Analysis</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+  </head>
+	
+
+		<h1>{{header}}</h1>
+		<center><h4><a href="/">Go back and enter another ticker</a></h4></center>
+		<div id="chart" class="chart"></div>
+		<div id="chart2" class="chart2"></div>
+		<br><br>  
+		<center>
+		<div>{{description}}</div>
+		<br><br>	
+		{{ table|safe }}
+		</center>
+	</body>
+
+	<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+	<script type="text/javascript">
+		var graph_hourly = {{graphJSON_hourly | safe}};
+		Plotly.plot('chart',graph_hourly,{}); 
+		var graph_daily = {{graphJSON_daily | safe}};  
+		Plotly.newPlot('chart2',graph_daily,{});   	
+	</script>
+
+</html>
