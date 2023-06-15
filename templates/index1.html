@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Sentiment Analysis</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="container mx-auto py-8">
+    <div class="bg-white shadow-lg rounded-lg p-8">
+      <h1 class="text-3xl font-bold mb-4">Stock Sentiment Analysis</h1>
+      <form class="flex-auto p-6" action="sentiment" method="POST" align="center">
+
+        <div class="flex items-center space-x-4">
+          <input id="question" type="text" placeholder="Type the stock symbol here" class="flex-grow p-4 border rounded-lg">
+        </div>
+        <div class="htmx-indicator h-4 w-2 bg-blue-500 invisible rounded-full"></div>
+        <input id="submit_button" type="Submit" class="h-10 px-6 font-semibold rounded-md bg-blue text-white">
+      </form>
+      <div class="htmx-indicator h-2 w-2 bg-blue-500 invisible rounded-full"></div>
+    </div>
+  </div>
+</body>
+</html>
