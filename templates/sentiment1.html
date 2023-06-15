@@ -7,18 +7,29 @@
 	<title>Stock Sentiment Analysis</title>
 	<script src="https://cdn.tailwindcss.com"></script>
   </head>
-	
+  <body class="bg-gray-100 min-h-screen">
+	<div class="container mx-auto py-8">
+	  <div class="bg-white shadow-lg rounded-lg p-8">
+		<h1 class="text-3xl font-bold mb-4">Stock Sentiment Analysis for {{ticker}}</h1>	
 
-		<h1>{{header}}</h1>
-		<center><h4><a href="/">Go back and enter another ticker</a></h4></center>
-		<div id="chart" class="chart"></div>
-		<div id="chart2" class="chart2"></div>
-		<br><br>  
-		<center>
-		<div>{{description}}</div>
-		<br><br>	
-		{{ table|safe }}
-		</center>
+		<div class="flex items-center space-x-4">
+			<h4 class="text-3xl font-bold mb-4"><a href="/">Go back and enter another ticker</a></h4>
+		</div>
+		<div class="htmx-indicator h-4 w-2 bg-blue-500 invisible rounded-full"></div>
+		<div class="flex items-center space-x-4">
+			<div id="chart" class="chart"></div>
+		</div>
+		<div class="flex items-center space-x-4">
+			<div id="chart2" class="chart2"></div>
+		</div>
+		<div class="htmx-indicator h-2 w-2 bg-blue-500 invisible rounded-full"></div>
+
+		<div class="flex items-center space-x-4">
+			<h5 class="text-3xl font-bold mb-4">{{description}}</h5>
+		</div>
+		<div class="flex items-center space-x-4">
+			{{ table|safe }}
+		</div>
 	</body>
 
 	<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>

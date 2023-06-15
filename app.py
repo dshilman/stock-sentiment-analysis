@@ -148,14 +148,13 @@ def sentiment():
         fig_hourly, cls=PlotlyJSONEncoder)
     graphJSON_daily = json.dumps(fig_daily, cls=PlotlyJSONEncoder)
 
-    header = "Hourly and Daily Sentiment of {} Stock".format(ticker)
     description = """
 	The above chart averages the sentiment scores of {} stock hourly and daily.
 	The table below gives each of the most recent headlines of the stock and the negative, neutral, positive and an aggregated sentiment score.
-	The news headlines are obtained from the FinViz website.
-	Sentiments are given by the nltk.sentiment.vader Python library.
+	The news headlines are obtained from Mboum Finance API.
     """.format(ticker)
-    return render_template('sentiment.html', graphJSON_hourly=graphJSON_hourly, graphJSON_daily=graphJSON_daily, header=header, table=parsed_and_scored_news.to_html(classes='data'), description=description)
+    
+    return render_template('sentiment.html', ticker=ticker, graphJSON_hourly=graphJSON_hourly, graphJSON_daily=graphJSON_daily, table=parsed_and_scored_news.to_html(classes='data'), description=description)
 
 
 if __name__ == '__main__':
