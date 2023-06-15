@@ -1,22 +1,23 @@
-from dotenv import load_dotenv
-import os
-import json
 import datetime
+import json
 import logging
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
-from flask import Flask, render_template, request
-import pandas as pd
-import plotly.express as px
-from plotly.utils import PlotlyJSONEncoder
-import requests
+import os
 
 # for graph plotting in website
 # NLTK VADER for sentiment analysis
 import nltk
+import pandas as pd
+import plotly.express as px
+import requests
+from dotenv import load_dotenv
+from flask import Flask, render_template, request
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from plotly.utils import PlotlyJSONEncoder
+
 nltk.downloader.download('vader_lexicon')
 
-from nltk.sentiment import SentimentAnalyzer
 import nltk.sentiment.util
+from nltk.sentiment import SentimentAnalyzer
 
 api_url = os.getenv("API-URL")
 api_key = os.getenv("API-Key")
@@ -33,7 +34,7 @@ if __name__ == '__main__':
 
 def get_news_from_yahoo(ticker):
 
-    querystring = {"symbol": "AAPL"}
+    querystring = {"symbol": ticker}
 
     headers = {
         "X-RapidAPI-Key": api_key,
@@ -126,7 +127,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return render_template('index1.html')
+    return render_template('index.html')
 
 
 @app.route('/sentiment', methods=['POST'])
