@@ -1,6 +1,7 @@
 flask
 requests
 pandas
+matplotlib
 nltk
 regex
 bs4
