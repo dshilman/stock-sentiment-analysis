@@ -30,9 +30,6 @@ EST = pytz.timezone('US/Eastern')
 
 app = Flask(__name__)
 
-if __name__ == '__main__':
-    app.run(debug=True, port=8001)
-
 
 # def convert_to_est_datetime(date_time_num):
 
@@ -70,8 +67,8 @@ def get_price_history_from_yahoo(ticker):
         utc_datetime = datetime.fromtimestamp(date_time_num, tz=pytz.utc)
 
         today = datetime.now(tz=pytz.utc)
-        two_days = timedelta(days=2)
-        not_before_date = today - two_days
+        three_days = timedelta(days=3)
+        not_before_date = today - three_days
 
         if utc_datetime < not_before_date:
             continue
@@ -80,10 +77,10 @@ def get_price_history_from_yahoo(ticker):
         data_dict.append([utc_datetime.strftime(date_format), price])
 
     # Set column names
-    columns = ['datetime', 'price']
+    columns = ['Date Time', 'Price']
     df = pd.DataFrame(data_dict, columns=columns)
-    df['datetime'] = pd.to_datetime(df['datetime'], format=date_format)
-    df.sort_values(by='datetime', ascending=False)
+    df['Date Time'] = pd.to_datetime(df['Date Time'], format=date_format)
+    df.sort_values(by='Date Time', ascending=True)
     df.reset_index(inplace=True)
     df.drop('index', axis=1, inplace=True)
 
@@ -122,12 +119,12 @@ def get_news_from_yahoo(ticker):
         data_dict.append([date_time_i_str, title_i, description_i])
 
     # Set column names
-    columns = ['datetime', 'headline', 'description']
+    columns = ['Date Time', 'Headline', 'Description']
     parsedata_df = pd.DataFrame(data_dict, columns=columns)
-    parsedata_df['datetime'] = pd.to_datetime(
-        parsedata_df['datetime'], format=date_format)
+    parsedata_df['Date Time'] = pd.to_datetime(
+        parsedata_df['Date Time'], format=date_format)
 
-    parsedata_df.sort_values(by='datetime', ascending=False)
+    parsedata_df.sort_values(by='Date Time', ascending=False)
     parsedata_df.reset_index(inplace=True)
     parsedata_df.drop('index', axis=1, inplace=True)
 
@@ -139,16 +136,16 @@ def score_news(news_df):
     vader = SentimentIntensityAnalyzer()
 
     # Iterate through the headlines and get the polarity scores using vader
-    scores = news_df['description'].apply(vader.polarity_scores).tolist()
+    scores = news_df['Description'].apply(vader.polarity_scores).tolist()
 
     # Convert the 'scores' list of dicts into a DataFrame
     scores_df = pd.DataFrame(scores)
 
     # Join the DataFrames of the news and the list of dicts
     scored_news_df = news_df.join(scores_df, rsuffix='_right')
-    scored_news_df = scored_news_df.set_index('datetime')
+    scored_news_df = scored_news_df.set_index('Date Time')
     scored_news_df = scored_news_df.rename(
-        columns={"compound": "sentiment_score"})
+        columns={"compound": "Sentiment Score"})
 
     return scored_news_df
 
@@ -159,15 +156,14 @@ def plot_hourly_sentiment(df, ticker):
     mean_scores = df.resample('H').mean(numeric_only=True)
 
     # Plot a bar chart with plotly
-    fig = px.bar(mean_scores, x=mean_scores.index, y='sentiment_score',
+    fig = px.bar(mean_scores, x=mean_scores.index, y='Sentiment Score',
                  title=f"{ticker} Hourly Sentiment Scores")
     return fig
 
 
 def plot_hourly_price(df, ticker):
 
-    fig = px.line(x=df['datetime'], y=df['price'],
-                  title=f"{ticker} Daily Stock Price Performance")
+    fig = px.line(data_frame=df, x=df['Date Time'], y="Price", title=f"{ticker} Price")
     return fig
 
 
