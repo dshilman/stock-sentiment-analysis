@@ -39,13 +39,10 @@
 		<div class="flex items-center space-x-4">
 			<div id="chart2" class="chart2"></div>
 		</div>
-		<div class="flex items-center space-x-4">
-			<div id="chart3" class="chart3"></div>
-		</div>
 		<div class="htmx-indicator h-2 w-2 bg-blue-500 invisible rounded-full"></div>
 
 		<div class="flex items-center space-x-4">
-			The above chart averages the sentiment scores of {ticker} stock hourly and daily.
+			The above chart averages the sentiment scores of {{ticker}} stock hourly and daily.
 			The table below gives each of the most recent headlines of the stock and the negative, neutral, positive and an aggregated sentiment score.
 			The news headlines are obtained from Mboum Finance API.			
 		</div>
@@ -56,14 +53,11 @@
 
 	<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 	<script type="text/javascript">
-		var graph_hourly = {{graphJSON_hourly | safe}};
+		var graph_hourly = {{graph_sentiment | safe}};
 		Plotly.plot('chart',graph_hourly,{}); 
 
-		var graph_daily = {{graphJSON_daily | safe}};  
-		Plotly.newPlot('chart2',graph_daily,{});
-		
-		var graph_price = {{graphJSON_price | safe}};  
-		Plotly.newPlot('chart3',graph_price,{});
+		var graph_price = {{graph_price | safe}};  
+		Plotly.newPlot('chart2',graph_price,{});
 	</script>
 
 </html>
