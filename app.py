@@ -153,10 +153,10 @@ def score_news(news_df):
 def plot_hourly_sentiment(df, ticker):
 
     # Group by date and ticker columns from scored_news and calculate the mean
-    mean_scores = df.resample('H').mean(numeric_only=True)
+    max_scores = df.resample('H').max(numeric_only=True)
 
     # Plot a bar chart with plotly
-    fig = px.bar(mean_scores, x=mean_scores.index, y='Sentiment Score',
+    fig = px.bar(max_scores, x=max_scores.index, y='Sentiment Score',
                  title=f"{ticker} Hourly Sentiment Scores")
     return fig
 
