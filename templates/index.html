@@ -9,14 +9,14 @@
 <body class="bg-gray-100 min-h-screen">
   <div class="container mx-auto py-8">
     <div class="bg-white shadow-lg rounded-lg p-8">
-      <h1 class="text-3xl font-bold mb-4">Stock Sentiment Analysis</h1>
+      <h1 class="text-3xl font-bold mb-4">News Sentiment and Stock Price Analysis</h1>
       <form class="flex-auto p-6" action="sentiment" method="POST" align="center">
         <div class="flex items-center space-x-4">
           <input id="ticker" name="ticker" type="text" placeholder="Type the stock ticker here" class="flex-grow p-4 border rounded-lg">
         </div>
         <div class="htmx-indicator h-4 w-2 bg-blue-500 invisible rounded-full"></div>
         <div class="flex-auto flex space-x-4">
-          <button class="bg-blue-500 text-white py-3 px-6 rounded-lg" type="submit">Perform Sentiment Analysis</button>
+          <button class="bg-blue-500 text-white py-3 px-6 rounded-lg" type="submit">Show News Sentiment and Stock Price</button>
         </div>
       </form>
     </div>

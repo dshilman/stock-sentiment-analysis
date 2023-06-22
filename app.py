@@ -21,7 +21,7 @@ api_url = os.getenv("API_URL")
 api_key = os.getenv("API_Key")
 api_host = os.getenv("RapidAPI-Host")
 
-date_format = "%b-%d-%y %I:%M%p"
+date_format = "%b-%d-%y %I:%M %p"
 EST = pytz.timezone('US/Eastern')
 
 
@@ -39,10 +39,10 @@ app = Flask(__name__)
 #     return est_datetime
 
 
-def get_price_history_from_yahoo(ticker):
+def get_price_history_from_yahoo(ticker, earliest_datetime):
 
     querystring = {"symbol": {ticker},
-                   "interval": "1h", "diffandsplits": "false"}
+                   "interval": "5m", "diffandsplits": "false"}
     url_price = "https://mboum-finance.p.rapidapi.com/hi/history"
 
     headers = {
@@ -65,16 +65,17 @@ def get_price_history_from_yahoo(ticker):
         date_time_num = stock_price["date_utc"]
         # est_date_time = convert_to_est_datetime(date_time_num)
         utc_datetime = datetime.fromtimestamp(date_time_num, tz=pytz.utc)
+        est_datetime = utc_datetime.astimezone(tz=EST)
 
-        today = datetime.now(tz=pytz.utc)
-        three_days = timedelta(days=3)
-        not_before_date = today - three_days
+        # today = datetime.now(tz=EST)
+        # three_days = timedelta(days=1)
+        # not_before_date = today - three_days
 
-        if utc_datetime < not_before_date:
+        if est_datetime < earliest_datetime:
             continue
 
         price = stock_price["open"]
-        data_dict.append([utc_datetime.strftime(date_format), price])
+        data_dict.append([est_datetime.strftime(date_format), price])
 
     # Set column names
     columns = ['Date Time', 'Price']
@@ -108,12 +109,14 @@ def get_news_from_yahoo(ticker):
 
     for article in articles:
         # Mon, 05 Jun 2023 20:46:19 +0000
-        datetime_i_utc = datetime.strptime(
+        utc_datetime = datetime.strptime(
             article['pubDate'], '%a, %d %b %Y %H:%M:%S %z')
+        est_datetime = utc_datetime.astimezone(tz=EST)
+
         # date_i_str = est_datetime.strftime("%b-%d-%y")
         # time_i_str = est_datetime.strftime("%I:%M%p")
 
-        date_time_i_str = datetime_i_utc.strftime(date_format)
+        date_time_i_str = est_datetime.strftime(date_format)
         title_i = article['title']
         description_i = article['description']
         data_dict.append([date_time_i_str, title_i, description_i])
@@ -122,13 +125,19 @@ def get_news_from_yahoo(ticker):
     columns = ['Date Time', 'Headline', 'Description']
     parsedata_df = pd.DataFrame(data_dict, columns=columns)
     parsedata_df['Date Time'] = pd.to_datetime(
-        parsedata_df['Date Time'], format=date_format)
+        parsedata_df['Date Time'], format=date_format, utc=False)
 
     parsedata_df.sort_values(by='Date Time', ascending=False)
     parsedata_df.reset_index(inplace=True)
     parsedata_df.drop('index', axis=1, inplace=True)
 
     return parsedata_df
+
+def get_earliest_date(df):
+
+    date = df['Date Time'].iloc[-1]    
+    py_date =  date.to_pydatetime()
+    return py_date.replace(tzinfo=EST)
 
 
 def score_news(news_df):
@@ -188,7 +197,8 @@ def sentiment():
     scored_news = score_news(news_df)
     fig_hourly = plot_hourly_sentiment(scored_news, ticker)
 
-    price_history_df = get_price_history_from_yahoo(ticker)
+    earliest_datetime = get_earliest_date(news_df)
+    price_history_df = get_price_history_from_yahoo(ticker, earliest_datetime)
     fig_price_history = plot_hourly_price(price_history_df, ticker)
 
 ######################################################################
