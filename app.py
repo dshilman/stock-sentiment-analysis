@@ -80,31 +80,34 @@ def get_news(ticker):
     response = requests.get(news_api_url, headers=headers, params=querystring)
 
     respose_json = response.json()
-
-    articles = respose_json['item']
     data_dict = []
 
-    for article in articles:
-        # Mon, 05 Jun 2023 20:46:19 +0000
-        utc_datetime = datetime.strptime(
-            article['pubDate'], '%a, %d %b %Y %H:%M:%S %z')
-        est_datetime = utc_datetime.astimezone(tz=EST)
+    if 'item' in respose_json:
+        articles = respose_json['item']
+        for article in articles:
+            # Mon, 05 Jun 2023 20:46:19 +0000
+            utc_datetime = datetime.strptime(
+                article['pubDate'], '%a, %d %b %Y %H:%M:%S %z')
+            est_datetime = utc_datetime.astimezone(tz=EST)
 
-        date_time_i_str = est_datetime.strftime(date_format)
-        title_i = article['title']
-        description_i = article['description']
-        data_dict.append([date_time_i_str, title_i, description_i])
+            date_time_i_str = est_datetime.strftime(date_format)
+            title_i = article['title']
+            description_i = article['description']
+            data_dict.append([date_time_i_str, title_i, description_i])
 
-    # Set column names
-    columns = ['Date Time', 'Headline', 'Description']
-    df = pd.DataFrame(data_dict, columns=columns)
-    df['Date Time'] = pd.to_datetime(
-        df['Date Time'], format=date_format, utc=False)
+        # Set column names
+        columns = ['Date Time', 'Headline', 'Description']
+        df = pd.DataFrame(data_dict, columns=columns)
+        df['Date Time'] = pd.to_datetime(
+            df['Date Time'], format=date_format, utc=False)
 
-    df.sort_values(by='Date Time', ascending=False)
-    df.reset_index(inplace=True)
-    df.drop('index', axis=1, inplace=True)
-
+        df.sort_values(by='Date Time', ascending=False)
+        df.reset_index(inplace=True)
+        df.drop('index', axis=1, inplace=True)
+    else:
+        print (f"no news feed for {ticker}")
+        raise Exception(f"no news feed for {ticker}")
+   
     return df
 
 
@@ -131,7 +134,7 @@ def score_news(news_df):
 
 def plot_sentiment(df, ticker):
 
-    # Group by date and ticker columns from scored_news and calculate the mean
+    # Group by date and ticker columns from scored_news and calculate the max
     max_scores = df.resample('H').max(numeric_only=True)
 
     # Plot a bar chart with plotly
@@ -155,10 +158,10 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/sentiment', methods=['POST'])
-def sentiment():
+@app.route('/analyze', methods=['POST'])
+def analyze():
 
-    ticker = request.form['ticker'].upper()
+    ticker = request.form['ticker'].strip().upper()
     # 1. get news feed
     news_df = get_news(ticker)
     # 2. perform sentiment analysis
@@ -175,7 +178,7 @@ def sentiment():
     graph_price = json.dumps(fig_line_price_history, cls=PlotlyJSONEncoder)
 
     # 7. render output
-    return render_template('sentiment.html', ticker=ticker, graph_price=graph_price, graph_sentiment=graph_sentiment, table=scored_news_df.to_html())
+    return render_template('analysis.html', ticker=ticker, graph_price=graph_price, graph_sentiment=graph_sentiment, table=scored_news_df.to_html())
 
 
 if __name__ == '__main__':
