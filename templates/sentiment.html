@@ -27,11 +27,7 @@
   <body class="bg-gray-100 min-h-screen">
 	<div class="container mx-auto py-8">
 		<div class="bg-white shadow-lg rounded-lg p-8">
-			<h1 class="text-3xl font-bold mb-4">Stock Sentiment Analysis for {{ticker}}</h1>	
-			<div class="htmx-indicator h-4 w-2 bg-blue-500 invisible rounded-full"></div>
-			<div class="flex items-center space-x-4">
-				<a href="/">Go back and enter another ticker</a>
-			</div>
+			<h1 class="text-3xl font-bold mb-4">Stock Sentiment Analysis for {{ticker}}</h1>			
 			<div class="htmx-indicator h-4 w-2 bg-blue-500 invisible rounded-full"></div>
 			<table>
 				<tr>
@@ -58,6 +54,10 @@
 			<div class="flex items-center space-x-4">
 				{{ table|safe }}
 			</div>
+			</div>
+			<div class="htmx-indicator h-4 w-2 bg-blue-500 invisible rounded-full"></div>
+			<div class="flex items-center space-x-4">
+				<a class = "underline" href="/">Back</a>
 			</div>
 		</div>
 	</body>

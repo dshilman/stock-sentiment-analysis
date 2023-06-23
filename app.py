@@ -17,59 +17,42 @@ from plotly.utils import PlotlyJSONEncoder
 nltk.downloader.download('vader_lexicon')
 
 
-api_url = os.getenv("API_URL")
+news_api_url = os.getenv("NEWS_API_URL")
+history_api_url = os.getenv("HISTORY_API_URL")
+
 api_key = os.getenv("API_Key")
 api_host = os.getenv("RapidAPI-Host")
 
-date_format = "%b-%d-%y %I:%M %p"
+date_format = "%b-%d-%y %H:%M %S"
 EST = pytz.timezone('US/Eastern')
 
+headers = {
+        "X-RapidAPI-Key": api_key,
+        "X-RapidAPI-Host": api_host
+    }
 
 # logging.basicConfig(filename='app_log.log',
 #                     encoding='utf-8', level=logging.DEBUG)
 
 app = Flask(__name__)
 
-
-# def convert_to_est_datetime(date_time_num):
-
-#     utc_datetime = datetime.fromtimestamp(date_time_num, tz=pytz.utc)
-#     est_datetime = utc_datetime.astimezone(tz=EST)
-
-#     return est_datetime
-
-
-def get_price_history_from_yahoo(ticker, earliest_datetime):
+def get_price_history(ticker, earliest_datetime):
 
     querystring = {"symbol": {ticker},
                    "interval": "5m", "diffandsplits": "false"}
-    url_price = "https://mboum-finance.p.rapidapi.com/hi/history"
-
-    headers = {
-        "X-RapidAPI-Key": api_key,
-        "X-RapidAPI-Host": api_host
-    }
-
-    response = requests.get(url_price, headers=headers, params=querystring)
-
-    # with open(file='sample.json', mode='r', encoding="utf8") as myfile:
-    #     data = myfile.read()
+    response = requests.get(history_api_url, headers=headers, params=querystring)
 
     respose_json = response.json()
 
     price_history = respose_json['items']
     data_dict = []
 
+    print(f"earliest_datetime: {earliest_datetime}")
     for stock_price in price_history.values():
 
         date_time_num = stock_price["date_utc"]
-        # est_date_time = convert_to_est_datetime(date_time_num)
         utc_datetime = datetime.fromtimestamp(date_time_num, tz=pytz.utc)
         est_datetime = utc_datetime.astimezone(tz=EST)
-
-        # today = datetime.now(tz=EST)
-        # three_days = timedelta(days=1)
-        # not_before_date = today - three_days
 
         if est_datetime < earliest_datetime:
             continue
@@ -88,19 +71,11 @@ def get_price_history_from_yahoo(ticker, earliest_datetime):
     return df
 
 
-def get_news_from_yahoo(ticker):
+def get_news(ticker):
 
     querystring = {"symbol": ticker}
 
-    headers = {
-        "X-RapidAPI-Key": api_key,
-        "X-RapidAPI-Host": api_host
-    }
-
-    response = requests.get(api_url, headers=headers, params=querystring)
-
-    # with open(file='sample.json', mode='r', encoding="utf8") as myfile:
-    #     data = myfile.read()
+    response = requests.get(news_api_url, headers=headers, params=querystring)
 
     respose_json = response.json()
 
@@ -113,9 +88,6 @@ def get_news_from_yahoo(ticker):
             article['pubDate'], '%a, %d %b %Y %H:%M:%S %z')
         est_datetime = utc_datetime.astimezone(tz=EST)
 
-        # date_i_str = est_datetime.strftime("%b-%d-%y")
-        # time_i_str = est_datetime.strftime("%I:%M%p")
-
         date_time_i_str = est_datetime.strftime(date_format)
         title_i = article['title']
         description_i = article['description']
@@ -123,31 +95,27 @@ def get_news_from_yahoo(ticker):
 
     # Set column names
     columns = ['Date Time', 'Headline', 'Description']
-    parsedata_df = pd.DataFrame(data_dict, columns=columns)
-    parsedata_df['Date Time'] = pd.to_datetime(
-        parsedata_df['Date Time'], format=date_format, utc=False)
+    df = pd.DataFrame(data_dict, columns=columns)
+    df['Date Time'] = pd.to_datetime(
+        df['Date Time'], format=date_format, utc=False)
 
-    parsedata_df.sort_values(by='Date Time', ascending=False)
-    parsedata_df.reset_index(inplace=True)
-    parsedata_df.drop('index', axis=1, inplace=True)
+    df.sort_values(by='Date Time', ascending=False)
+    df.reset_index(inplace=True)
+    df.drop('index', axis=1, inplace=True)
 
-    return parsedata_df
+    return df
+
 
 def get_earliest_date(df):
 
-    date = df['Date Time'].iloc[-1]    
-    py_date =  date.to_pydatetime()
+    date = df['Date Time'].iloc[-1]
+    py_date = date.to_pydatetime()
     return py_date.replace(tzinfo=EST)
 
 
 def score_news(news_df):
-    # Instantiate the sentiment intensity analyzer
     vader = SentimentIntensityAnalyzer()
-
-    # Iterate through the headlines and get the polarity scores using vader
     scores = news_df['Description'].apply(vader.polarity_scores).tolist()
-
-    # Convert the 'scores' list of dicts into a DataFrame
     scores_df = pd.DataFrame(scores)
 
     # Join the DataFrames of the news and the list of dicts
@@ -159,7 +127,7 @@ def score_news(news_df):
     return scored_news_df
 
 
-def plot_hourly_sentiment(df, ticker):
+def plot_sentiment(df, ticker):
 
     # Group by date and ticker columns from scored_news and calculate the mean
     max_scores = df.resample('H').max(numeric_only=True)
@@ -172,7 +140,8 @@ def plot_hourly_sentiment(df, ticker):
 
 def plot_hourly_price(df, ticker):
 
-    fig = px.line(data_frame=df, x=df['Date Time'], y="Price", title=f"{ticker} Price")
+    fig = px.line(data_frame=df, x=df['Date Time'],
+                  y="Price", title=f"{ticker} Price")
     return fig
 
 
@@ -186,27 +155,21 @@ def index():
 
 @app.route('/sentiment', methods=['POST'])
 def sentiment():
-
-    # logging.debug('In sentiment')
-
+    
     ticker = request.form['ticker'].upper()
-    news_df = get_news_from_yahoo(ticker)
 
-
-##############################################################
-    scored_news = score_news(news_df)
-    fig_hourly = plot_hourly_sentiment(scored_news, ticker)
+    news_df = get_news(ticker)
+    scored_news_df = score_news(news_df)
+    fig_sentiment = plot_sentiment(scored_news_df, ticker)
+    graph_sentiment = json.dumps(fig_sentiment, cls=PlotlyJSONEncoder)
 
     earliest_datetime = get_earliest_date(news_df)
-    price_history_df = get_price_history_from_yahoo(ticker, earliest_datetime)
+
+    price_history_df = get_price_history(ticker, earliest_datetime)
     fig_price_history = plot_hourly_price(price_history_df, ticker)
-
-######################################################################
-
-    graph_sentiment = json.dumps(fig_hourly, cls=PlotlyJSONEncoder)
     graph_price = json.dumps(fig_price_history, cls=PlotlyJSONEncoder)
 
-    return render_template('sentiment.html', ticker=ticker, graph_price=graph_price, graph_sentiment=graph_sentiment, table=scored_news.to_html())
+    return render_template('sentiment.html', ticker=ticker, graph_price=graph_price, graph_sentiment=graph_sentiment, table=scored_news_df.to_html())
 
 
 if __name__ == '__main__':
