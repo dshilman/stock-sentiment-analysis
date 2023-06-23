@@ -1,63 +1,46 @@
 <!doctype html>
 <html>
-	<style>
-		body            { font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;}
-		a, h1, h2       { color: #377ba8; }
-		h1, h2          { margin: 0; }
-		h1              { border-bottom: 2px solid #eee; }
-		h2              { font-size: 1.2em; }
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<center><title>Stock Sentiment Analysis</title></center>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}" />
+		<script src="https://cdn.tailwindcss.com"></script>
+	</head>
+	<body class="bg-gray-100 min-h-screen">
+		<div class="container mx-auto py-8">
+			<div class="bg-white shadow-lg rounded-lg p-8">
+				<h1 class="text-3xl font-bold mb-4">Stock Sentiment Analysis for {{ticker}}</h1>			
+				<div class="htmx-indicator h-4 w-2 bg-blue-500 invisible rounded-full"></div>
+				<table>
+					<tr>
+						<td>
+							<div class="flex items-center space-x-4">
+								<div id="chart" class="chart"></div>
+							</div>
+						</td>
+						<td>
+							<div class="flex items-center space-x-4">
+								<div id="chart2" class="chart2"></div>
+							</div>
+						</td>
+					</tr>
+				</table>
+				
+				<div class="htmx-indicator h-2 w-2 bg-blue-500 invisible rounded-full"></div>
 
-		table.dataframe, .dataframe th, .dataframe td {
-		  border: none;
-		  border-bottom: 1px solid #C8C8C8;
-		  border-collapse: collapse;
-		  text-align:left;
-		  padding: 10px;
-		  margin-bottom: 40px;
-		  font-size: 0.8em;
-		}
-	</style>
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<center><title>Stock Sentiment Analysis</title></center>
-	<script src="https://cdn.tailwindcss.com"></script>
-	
-  </head>
-  <body class="bg-gray-100 min-h-screen">
-	<div class="container mx-auto py-8">
-		<div class="bg-white shadow-lg rounded-lg p-8">
-			<h1 class="text-3xl font-bold mb-4">Stock Sentiment Analysis for {{ticker}}</h1>			
-			<div class="htmx-indicator h-4 w-2 bg-blue-500 invisible rounded-full"></div>
-			<table>
-				<tr>
-					<td>
-						<div class="flex items-center space-x-4">
-							<div id="chart" class="chart"></div>
-						</div>
-					</td>
-					<td>
-						<div class="flex items-center space-x-4">
-							<div id="chart2" class="chart2"></div>
-						</div>
-					</td>
-				</tr>
-			</table>
-			
-			<div class="htmx-indicator h-2 w-2 bg-blue-500 invisible rounded-full"></div>
-
-			<div class="flex items-center space-x-4">
-				The above chart averages the sentiment scores and price of {{ticker}} stock.
-				The table below gives each of the most recent headlines of the stock and the negative, neutral, positive and an aggregated sentiment score.
-				The news headlines are obtained from Mboum Finance API.
-			</div>
-			<div class="flex items-center space-x-4">
-				{{ table|safe }}
-			</div>
-			</div>
-			<div class="htmx-indicator h-4 w-2 bg-blue-500 invisible rounded-full"></div>
-			<div class="flex items-center space-x-4">
-				<a class = "underline" href="/">Back</a>
+				<div class="flex items-center space-x-4">
+					The above chart averages the sentiment scores and price of {{ticker}} stock.
+					The table below gives each of the most recent headlines of the stock and the negative, neutral, positive and an aggregated sentiment score.
+					The news headlines are obtained from Mboum Finance API.
+				</div>
+				<div class="flex items-center space-x-4">
+					{{ table|safe }}
+				</div>
+				<div class="htmx-indicator h-4 w-2 bg-blue-500 invisible rounded-full"></div>
+				<div class="flex items-center space-x-4">
+					<a class = "underline" href="/">Back</a>
+				</div>
 			</div>
 		</div>
 	</body>
@@ -70,5 +53,4 @@
 		var graph_price = {{graph_price | safe}};  
 		Plotly.newPlot('chart2',graph_price,{});
 	</script>
-
 </html>

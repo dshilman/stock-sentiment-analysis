@@ -27,20 +27,22 @@ date_format = "%b-%d-%y %H:%M %S"
 EST = pytz.timezone('US/Eastern')
 
 headers = {
-        "X-RapidAPI-Key": api_key,
-        "X-RapidAPI-Host": api_host
-    }
+    "X-RapidAPI-Key": api_key,
+    "X-RapidAPI-Host": api_host
+}
 
 # logging.basicConfig(filename='app_log.log',
 #                     encoding='utf-8', level=logging.DEBUG)
 
 app = Flask(__name__)
 
+
 def get_price_history(ticker, earliest_datetime):
 
     querystring = {"symbol": {ticker},
                    "interval": "5m", "diffandsplits": "false"}
-    response = requests.get(history_api_url, headers=headers, params=querystring)
+    response = requests.get(
+        history_api_url, headers=headers, params=querystring)
 
     respose_json = response.json()
 
@@ -155,20 +157,24 @@ def index():
 
 @app.route('/sentiment', methods=['POST'])
 def sentiment():
-    
+
     ticker = request.form['ticker'].upper()
-
+    # 1. get news feed
     news_df = get_news(ticker)
+    # 2. perform sentiment analysis
     scored_news_df = score_news(news_df)
-    fig_sentiment = plot_sentiment(scored_news_df, ticker)
-    graph_sentiment = json.dumps(fig_sentiment, cls=PlotlyJSONEncoder)
-
+    # 3. create a bar diagram
+    fig_bar_sentiment = plot_sentiment(scored_news_df, ticker)
+    graph_sentiment = json.dumps(fig_bar_sentiment, cls=PlotlyJSONEncoder)
+    # 4. get earliest data time from the news data feed
     earliest_datetime = get_earliest_date(news_df)
-
+    # 5. get price history for the ticker, ignore price history earlier than the news feed
     price_history_df = get_price_history(ticker, earliest_datetime)
-    fig_price_history = plot_hourly_price(price_history_df, ticker)
-    graph_price = json.dumps(fig_price_history, cls=PlotlyJSONEncoder)
+    # 6. create a linear diagram
+    fig_line_price_history = plot_hourly_price(price_history_df, ticker)
+    graph_price = json.dumps(fig_line_price_history, cls=PlotlyJSONEncoder)
 
+    # 7. render output
     return render_template('sentiment.html', ticker=ticker, graph_price=graph_price, graph_sentiment=graph_sentiment, table=scored_news_df.to_html())
 
 
