@@ -94,8 +94,7 @@ def get_news(ticker):
             title_i = article['title']
             description_i = article['description']
             link_i = article['link']
-            title_i = f"<a class = \"underline\" href=\"{link_i}\">{title_i}</a>"
-            data_dict.append([date_time_i_str, title_i, description_i, link_i])
+            data_dict.append([date_time_i_str, title_i, description_i])
 
         # Set column names
         columns = ['Date Time', 'Headline', 'Description']
@@ -122,7 +121,7 @@ def get_earliest_date(df):
 
 def score_news(news_df):
     vader = SentimentIntensityAnalyzer()
-    scores = news_df['Description'].apply(vader.polarity_scores).tolist()
+    scores = news_df['Headline'].apply(vader.polarity_scores).tolist()
     scores_df = pd.DataFrame(scores)
 
     # Join the DataFrames of the news and the list of dicts
@@ -180,6 +179,7 @@ def analyze():
     graph_price = json.dumps(fig_line_price_history, cls=PlotlyJSONEncoder)
 
     # 7. render output
+    # scored_news_df['Headline'] = scored_news_df['Headline'].apply(lambda title: f'<a href="{title[1]}">{title[0]}</a>')
     return render_template('analysis.html', ticker=ticker, graph_price=graph_price, graph_sentiment=graph_sentiment, table=scored_news_df.to_html())
 
 
