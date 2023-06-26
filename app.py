@@ -94,10 +94,10 @@ def get_news(ticker):
             title_i = article['title']
             description_i = article['description']
             link_i = article['link']
-            data_dict.append([date_time_i_str, title_i, description_i])
+            data_dict.append([date_time_i_str, title_i, description_i, [title_i, link_i]])
 
         # Set column names
-        columns = ['Date Time', 'Headline', 'Description']
+        columns = ['Date Time', 'Headline', 'Description', 'Placeholder']
         df = pd.DataFrame(data_dict, columns=columns)
         df['Date Time'] = pd.to_datetime(
             df['Date Time'], format=date_format, utc=False)
@@ -180,7 +180,29 @@ def analyze():
 
     # 7. render output
     # scored_news_df['Headline'] = scored_news_df['Headline'].apply(lambda title: f'<a href="{title[1]}">{title[0]}</a>')
-    return render_template('analysis.html', ticker=ticker, graph_price=graph_price, graph_sentiment=graph_sentiment, table=scored_news_df.to_html())
+    
+    scored_news_df = make_prety(scored_news_df)
+    return render_template('analysis.html', ticker=ticker, graph_price=graph_price, graph_sentiment=graph_sentiment, table=scored_news_df.to_html(classes='mystyle'))
+
+def style_negative(v, props=''):
+    return props if v < 0.5 else None
+
+def make_prety(df):
+
+    # df['Headline'] = df['Headline'].apply(lambda title: f'<a href="{title[1]}">{title[0]}</a>')
+    
+    df['Headline'] = df['Placeholder']
+    df.style.format({'Headline': get_link})
+    df.drop('Placeholder', inplace=True, axis=1)
+  
+    df = df.style.applymap(style_negative, props='color:red;').applymap(lambda v: 'opacity: 20%;' if (v > 0.5) else None)
+    props = 'font-family: "color: #e83e8c; font-size:1.3em;'
+    df = df.style.set_table_styles([{'selector': 'td.col1', 'props': props}])
+
+    return df
+
+def get_link(value):
+    return f'<a href="{value[1]}">{value[0]}</a>'
 
 
 if __name__ == '__main__':
