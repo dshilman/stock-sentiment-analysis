@@ -93,7 +93,9 @@ def get_news(ticker):
             date_time_i_str = est_datetime.strftime(date_format)
             title_i = article['title']
             description_i = article['description']
-            data_dict.append([date_time_i_str, title_i, description_i])
+            link_i = article['link']
+            title_i = f"<a class = \"underline\" href=\"{link_i}\">{title_i}</a>"
+            data_dict.append([date_time_i_str, title_i, description_i, link_i])
 
         # Set column names
         columns = ['Date Time', 'Headline', 'Description']
