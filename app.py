@@ -164,7 +164,7 @@ def analyze():
     ticker = request.form['ticker'].strip().upper()
     # 1. get news feed
     news_df = get_news(ticker)
-    # 2. perform sentiment analysis
+    # 2. calculate sentiment scores
     scored_news_df = score_news(news_df)
     # 3. create a bar diagram
     fig_bar_sentiment = plot_sentiment(scored_news_df, ticker)
