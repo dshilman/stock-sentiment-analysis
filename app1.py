@@ -1,67 +1,43 @@
 import json
 import logging
-import os
 from datetime import datetime, timedelta
+from faker import Faker
+from faker.providers import date_time
+from faker.providers import internet
+import random
 
-import nltk
-import nltk.sentiment.util
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+
 import pytz
-import requests
 from dotenv import load_dotenv
 from flask import Flask, render_template, request
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from plotly.utils import PlotlyJSONEncoder
 
-# nltk.downloader.download('vader_lexicon')
 
-
-news_api_url: str = str(os.getenv("NEWS_API_URL"))
-history_api_url: str = str(os.getenv("HISTORY_API_URL"))
-
-api_key: str = str(os.getenv("API_Key"))
-api_host: str = str(os.getenv("RapidAPI-Host"))
+fake = Faker()
+Faker.seed(20)
 
 date_format = "%b-%d-%y %H:%M %S"
 EST = pytz.timezone('US/Eastern')
 
-headers = {
-    "X-RapidAPI-Key": api_key,
-    "X-RapidAPI-Host": api_host
-}
-
-# logging.basicConfig(filename='app_log.log',
-#                     encoding='utf-8', level=logging.DEBUG)
 
 app = Flask(__name__)
 
 
-def get_price_history(ticker: str, earliest_datetime: pd.Timestamp) -> pd.DataFrame:
+def get_price_history(ticker):
 
-    querystring = {"symbol": {ticker},
-                   "interval": "5m", "diffandsplits": "false"}
-    response = requests.get(url=history_api_url,
-                            headers=headers, params=querystring)
-
-    respose_json = response.json()
-
-    price_history = respose_json['items']
     data_dict = []
 
-    print(f"earliest_datetime: {earliest_datetime}")
-    for stock_price in price_history.values():
+    date = datetime.now() - timedelta(days=20)
 
-        date_time_num = stock_price["date_utc"]
-        utc_datetime = datetime.fromtimestamp(date_time_num, tz=pytz.utc)
-        est_datetime = utc_datetime.astimezone(tz=EST)
+    for i in range(20):
 
-        if est_datetime < earliest_datetime:
-            continue
-
-        price = stock_price["open"]
-        data_dict.append([est_datetime.strftime(date_format), price])
+        date_time_num = date + timedelta(days=i)
+        price = random.randrange(100)
+        data_dict.append([date_time_num.strftime(date_format), price])
 
     # Set column names
     columns = ['Date Time', 'Price']
@@ -76,53 +52,34 @@ def get_price_history(ticker: str, earliest_datetime: pd.Timestamp) -> pd.DataFr
 
 def get_news(ticker) -> pd.DataFrame:
 
-    querystring = {"symbol": ticker}
+    date = datetime.now() - timedelta(days=3)
 
-    response = requests.get(
-        url=news_api_url, headers=headers, params=querystring)
-
-    respose_json = response.json()
     data_dict = []
+    for i in range(20):
+        # Mon, 05 Jun 2023 20:46:19 +0000
 
-    if 'item' in respose_json:
-        articles = respose_json['item']
-        for article in articles:
-            # Mon, 05 Jun 2023 20:46:19 +0000
-            utc_datetime = datetime.strptime(
-                article['pubDate'], '%a, %d %b %Y %H:%M:%S %z')
-            est_datetime = utc_datetime.astimezone(tz=EST)
+        date_time_i_str = (
+            date - timedelta(days=random.randrange(3))).strftime(date_format)
+        title_i = fake.paragraph(nb_sentences=1)
+        description_i = fake.paragraph(nb_sentences=3)
+        link_i = fake.uri()
+        data_dict.append(
+            [date_time_i_str, title_i, description_i, f'<a href="{link_i}">{title_i}</a>'])
 
-            date_time_i_str = est_datetime.strftime(date_format)
-            title_i = article['title']
-            description_i = article['description']
-            link_i = article['link']
-            data_dict.append(
-                [date_time_i_str, title_i, description_i, [title_i, link_i]])
+    # Set column names
+    columns = ['Date Time', 'Headline', 'Description', 'Headline + Link']
+    df = pd.DataFrame(data_dict, columns=columns)
+    df['Date Time'] = pd.to_datetime(
+        df['Date Time'], format=date_format, utc=False)
 
-        # Set column names
-        columns = ['Date Time', 'Headline', 'Description', 'Placeholder']
-        df = pd.DataFrame(data_dict, columns=columns)
-        df['Date Time'] = pd.to_datetime(
-            df['Date Time'], format=date_format, utc=False)
-
-        df.sort_values(by='Date Time', ascending=False)
-        df.reset_index(inplace=True)
-        df.drop('index', axis=1, inplace=True)
-    else:
-        print(f"no news feed for {ticker}")
-        raise Exception(f"no news feed for {ticker}")
+    df.sort_values(by='Date Time', ascending=False)
+    df.reset_index(inplace=True)
+    df.drop('index', axis=1, inplace=True)
 
     return df
 
 
-def get_earliest_date(df: pd.DataFrame) -> pd.Timestamp:
-
-    date = df['Date Time'].iloc[-1]
-    py_date = date.to_pydatetime()
-    return py_date.replace(tzinfo=EST)
-
-
-def score_news(news_df: pd.DataFrame) -> pd.DataFrame:
+def score_news(news_df) -> pd.DataFrame:
     vader = SentimentIntensityAnalyzer()
     scores = news_df['Headline'].apply(vader.polarity_scores).tolist()
     scores_df = pd.DataFrame(scores)
@@ -135,14 +92,13 @@ def score_news(news_df: pd.DataFrame) -> pd.DataFrame:
 
     return scored_news_df
 
-
-def plot_sentiment(df: pd.DataFrame, ticker: str) -> go.Figure:
+def plot_sentiment(df, ticker) -> go.Figure:
 
     # Group by date and ticker columns from scored_news and calculate the max
     max_scores = df.resample('H').max(numeric_only=True)
 
     # Plot a bar chart with plotly
-    fig = px.bar(max_scores, x=max_scores.index, y='Sentiment Score',
+    fig = px.bar(data_frame=max_scores, x=max_scores.index, y='Sentiment Score',
                  title=f"{ticker} Hourly Sentiment Scores")
     return fig
 
@@ -154,7 +110,7 @@ def plot_hourly_price(df, ticker) -> go.Figure:
     return fig
 
 
-@app.route('/', methods=['GET'])
+@app.route('/')
 def index():
     return render_template('index.html')
 
@@ -171,9 +127,8 @@ def analyze():
     fig_bar_sentiment = plot_sentiment(scored_news_df, ticker)
     graph_sentiment = json.dumps(fig_bar_sentiment, cls=PlotlyJSONEncoder)
     # 4. get earliest data time from the news data feed
-    earliest_datetime = get_earliest_date(news_df)
     # 5. get price history for the ticker, ignore price history earlier than the news feed
-    price_history_df = get_price_history(ticker, earliest_datetime)
+    price_history_df = get_price_history(ticker)
     # 6. create a linear diagram
     fig_line_price_history = plot_hourly_price(price_history_df, ticker)
     graph_price = json.dumps(fig_line_price_history, cls=PlotlyJSONEncoder)
@@ -193,6 +148,31 @@ def convert_headline_to_link(df: pd.DataFrame) -> pd.DataFrame:
     df.drop('Headline + Link', inplace=True, axis=1)
 
     return df
+
+
+def style_negative(v, props=''):
+    return props if float(v) < 0.5000 else None
+
+
+def style_positive(v, props=''):
+    return props if float(v) > 0.5000 else None
+
+    # df.style.applymap(func=style_negative, props='color:red;', subset=['Sentiment Score'])\
+    #     .applymap(func=style_positive, props= 'opacity: 20%;', subset=['Sentiment Score'])
+
+    # # df.style.set_table_styles(table_styles=[
+    #         {'selector': "td.col1",
+    #          'props': 'font-family, color: #e83e8c; font-size:1.3em;'}
+    #     ])\
+    #     .format(escape="html")\
+    #     .background_gradient(axis=None, vmin=1, vmax=5, cmap="YlGnBu")\
+    #     .set_sticky(axis="index")
+
+    return df
+
+
+# def get_link(value):
+#     return f'<a href="{value[1]}">{value[0]}</a>'
 
 
 if __name__ == '__main__':
