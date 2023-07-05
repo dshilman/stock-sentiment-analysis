@@ -15,7 +15,7 @@ from flask import Flask, render_template, request
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from plotly.utils import PlotlyJSONEncoder
 
-# nltk.downloader.download('vader_lexicon')
+nltk.downloader.download('vader_lexicon')
 
 
 news_api_url: str = str(os.getenv("NEWS_API_URL"))
@@ -97,10 +97,11 @@ def get_news(ticker) -> pd.DataFrame:
             description_i = article['description']
             link_i = article['link']
             data_dict.append(
-                [date_time_i_str, title_i, description_i, [title_i, link_i]])
+            [date_time_i_str, title_i, description_i, f'<a href="{link_i}">{title_i}</a>'])
 
         # Set column names
-        columns = ['Date Time', 'Headline', 'Description', 'Placeholder']
+        columns = ['Date Time', 'Headline', 'Description', 'Headline + Link']
+
         df = pd.DataFrame(data_dict, columns=columns)
         df['Date Time'] = pd.to_datetime(
             df['Date Time'], format=date_format, utc=False)
@@ -138,11 +139,12 @@ def score_news(news_df: pd.DataFrame) -> pd.DataFrame:
 
 def plot_sentiment(df: pd.DataFrame, ticker: str) -> go.Figure:
 
-    # Group by date and ticker columns from scored_news and calculate the max
-    max_scores = df.resample('H').max(numeric_only=True)
+    df.drop(df[df['Sentiment Score'] == 0].index, inplace = True)
+
+    # max_scores = df.resample('H').mean(numeric_only=True)
 
     # Plot a bar chart with plotly
-    fig = px.bar(data_frame=max_scores, x=max_scores.index, y='Sentiment Score',
+    fig = px.bar(data_frame=df, x=df.index, y='Sentiment Score',
                  title=f"{ticker} Hourly Sentiment Scores")
     return fig
 
