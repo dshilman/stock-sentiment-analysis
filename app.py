@@ -97,7 +97,7 @@ def get_news(ticker) -> pd.DataFrame:
             description_i = article['description']
             link_i = article['link']
             data_dict.append(
-            [date_time_i_str, title_i, description_i, f'<a href="{link_i}">{title_i}</a>'])
+                [date_time_i_str, title_i, description_i, f'<a href="{link_i}">{title_i}</a>'])
 
         # Set column names
         columns = ['Date Time', 'Headline', 'Description', 'Headline + Link']
@@ -139,13 +139,16 @@ def score_news(news_df: pd.DataFrame) -> pd.DataFrame:
 
 def plot_sentiment(df: pd.DataFrame, ticker: str) -> go.Figure:
 
-    df.drop(df[df['Sentiment Score'] == 0].index, inplace = True)
+    df.drop(df[df['Sentiment Score'] == 0].index, inplace=True)
 
-    # max_scores = df.resample('H').mean(numeric_only=True)
+    df = df.resample('H').mean(numeric_only=True)
 
     # Plot a bar chart with plotly
     fig = px.bar(data_frame=df, x=df.index, y='Sentiment Score',
                  title=f"{ticker} Hourly Sentiment Scores")
+    # fig.update_layout({'plot_bgcolor': 'rgba(0, 0, 0, 0)',
+    #                    'paper_bgcolor': 'rgba(0, 0, 0, 0)',
+    #                    })
     return fig
 
 
