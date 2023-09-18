@@ -1,49 +1,39 @@
 import json
-import logging
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 
-import nltk
-import nltk.sentiment.util
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import pytz
 import requests
-from dotenv import load_dotenv
 from flask import Flask, render_template, request
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from plotly.utils import PlotlyJSONEncoder
+from config import config
+from sentiment.algo import FinbertSentiment
+from yahoo_api import API
 
-nltk.downloader.download('vader_lexicon')
 
+history_api_url = config.HISTORY_API_URL
 
-news_api_url: str = str(os.getenv("NEWS_API_URL"))
-history_api_url: str = str(os.getenv("HISTORY_API_URL"))
-
-api_key: str = str(os.getenv("API_Key"))
-api_host: str = str(os.getenv("RapidAPI-Host"))
 
 date_format = "%b-%d-%y %H:%M %S"
 EST = pytz.timezone('US/Eastern')
 
-headers = {
-    "X-RapidAPI-Key": api_key,
-    "X-RapidAPI-Host": api_host
-}
 
 # logging.basicConfig(filename='app_log.log',
 #                     encoding='utf-8', level=logging.DEBUG)
 
 app = Flask(__name__)
 
+sentiment = FinbertSentiment()
 
 def get_price_history(ticker: str, earliest_datetime: pd.Timestamp) -> pd.DataFrame:
 
     querystring = {"symbol": {ticker},
                    "interval": "5m", "diffandsplits": "false"}
     response = requests.get(url=history_api_url,
-                            headers=headers, params=querystring)
+                            headers=config.headers, params=querystring)
 
     respose_json = response.json()
 
@@ -76,44 +66,10 @@ def get_price_history(ticker: str, earliest_datetime: pd.Timestamp) -> pd.DataFr
 
 def get_news(ticker) -> pd.DataFrame:
 
-    querystring = {"symbol": ticker}
+    sentiment.set_symbol(ticker)
 
-    response = requests.get(
-        url=news_api_url, headers=headers, params=querystring)
-
-    respose_json = response.json()
-    data_dict = []
-
-    if 'item' in respose_json:
-        articles = respose_json['item']
-        for article in articles:
-            # Mon, 05 Jun 2023 20:46:19 +0000
-            utc_datetime = datetime.strptime(
-                article['pubDate'], '%a, %d %b %Y %H:%M:%S %z')
-            est_datetime = utc_datetime.astimezone(tz=EST)
-
-            date_time_i_str = est_datetime.strftime(date_format)
-            title_i = article['title']
-            description_i = article['description']
-            link_i = article['link']
-            data_dict.append(
-                [date_time_i_str, title_i, description_i, f'<a href="{link_i}">{title_i}</a>'])
-
-        # Set column names
-        columns = ['Date Time', 'Headline', 'Description', 'Headline + Link']
-
-        df = pd.DataFrame(data_dict, columns=columns)
-        df['Date Time'] = pd.to_datetime(
-            df['Date Time'], format=date_format, utc=False)
-
-        df.sort_values(by='Date Time', ascending=False)
-        df.reset_index(inplace=True)
-        df.drop('index', axis=1, inplace=True)
-    else:
-        print(f"no news feed for {ticker}")
-        raise Exception(f"no news feed for {ticker}")
-
-    return df
+    api = API()
+    return api.get_news(ticker)
 
 
 def get_earliest_date(df: pd.DataFrame) -> pd.Timestamp:
@@ -124,32 +80,17 @@ def get_earliest_date(df: pd.DataFrame) -> pd.Timestamp:
 
 
 def score_news(news_df: pd.DataFrame) -> pd.DataFrame:
-    vader = SentimentIntensityAnalyzer()
-    scores = news_df['Headline'].apply(vader.polarity_scores).tolist()
-    scores_df = pd.DataFrame(scores)
 
-    # Join the DataFrames of the news and the list of dicts
-    scored_news_df = news_df.join(scores_df, rsuffix='_right')
-    scored_news_df = scored_news_df.set_index('Date Time')
-    scored_news_df = scored_news_df.rename(
-        columns={"compound": "Sentiment Score"})
+    sentiment.set_data(news_df)
+    sentiment.calc_sentiment_score()
 
-    return scored_news_df
+    return sentiment.df
 
 
 def plot_sentiment(df: pd.DataFrame, ticker: str) -> go.Figure:
 
-    df.drop(df[df['Sentiment Score'] == 0].index, inplace=True)
+    return sentiment.plot_sentiment()
 
-    df = df.resample('H').mean(numeric_only=True)
-
-    # Plot a bar chart with plotly
-    fig = px.bar(data_frame=df, x=df.index, y='Sentiment Score',
-                 title=f"{ticker} Hourly Sentiment Scores")
-    # fig.update_layout({'plot_bgcolor': 'rgba(0, 0, 0, 0)',
-    #                    'paper_bgcolor': 'rgba(0, 0, 0, 0)',
-    #                    })
-    return fig
 
 
 def plot_hourly_price(df, ticker) -> go.Figure:
@@ -195,10 +136,10 @@ def convert_headline_to_link(df: pd.DataFrame) -> pd.DataFrame:
     # df['Headline'] = df['Headline'].apply(lambda title: f'<a href="{title[1]}">{title[0]}</a>')
 
     df['Headline'] = df['Headline + Link']
-    df.drop('Headline + Link', inplace=True, axis=1)
+    df.drop(columns = ['sentiment', 'Headline + Link'], inplace=True, axis=1)
 
     return df
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80, debug=True, load_dotenv=True)
+    app.run(debug=True)

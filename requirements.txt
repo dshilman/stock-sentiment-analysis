@@ -9,3 +9,6 @@ plotly
 gunicorn
 numpy
 python-dotenv
+torch
+transformers
+xformers
