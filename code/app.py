@@ -10,7 +10,7 @@ import requests
 from flask import Flask, render_template, request
 from plotly.utils import PlotlyJSONEncoder
 from config import config
-from sentiment.algo import FinbertSentiment
+from sentiment.FinbertSentiment import FinbertSentiment
 from yahoo_api import API
 
 
@@ -26,7 +26,7 @@ EST = pytz.timezone('US/Eastern')
 
 app = Flask(__name__)
 
-sentiment = FinbertSentiment()
+sentimentAlgo = FinbertSentiment()
 
 def get_price_history(ticker: str, earliest_datetime: pd.Timestamp) -> pd.DataFrame:
 
@@ -66,7 +66,7 @@ def get_price_history(ticker: str, earliest_datetime: pd.Timestamp) -> pd.DataFr
 
 def get_news(ticker) -> pd.DataFrame:
 
-    sentiment.set_symbol(ticker)
+    sentimentAlgo.set_symbol(ticker)
 
     api = API()
     return api.get_news(ticker)
@@ -81,15 +81,15 @@ def get_earliest_date(df: pd.DataFrame) -> pd.Timestamp:
 
 def score_news(news_df: pd.DataFrame) -> pd.DataFrame:
 
-    sentiment.set_data(news_df)
-    sentiment.calc_sentiment_score()
+    sentimentAlgo.set_data(news_df)
+    sentimentAlgo.calc_sentiment_score()
 
-    return sentiment.df
+    return sentimentAlgo.df
 
 
 def plot_sentiment(df: pd.DataFrame, ticker: str) -> go.Figure:
 
-    return sentiment.plot_sentiment()
+    return sentimentAlgo.plot_sentiment()
 
 
 
