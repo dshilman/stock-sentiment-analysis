@@ -20,6 +20,9 @@ class SentimentAnalysisBase():
     def get_sentiment_scores(self):
         return self.df
 
+    def calc_sentiment_score(self):
+        pass
+
     def plot_sentiment(self) -> go.Figure:
 
         column = 'sentiment_score'

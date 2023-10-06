@@ -26,8 +26,6 @@ EST = pytz.timezone('US/Eastern')
 
 app = Flask(__name__)
 
-sentimentAlgo = FinbertSentiment()
-
 def get_price_history(ticker: str, earliest_datetime: pd.Timestamp) -> pd.DataFrame:
 
     querystring = {"symbol": {ticker},
@@ -64,19 +62,14 @@ def get_price_history(ticker: str, earliest_datetime: pd.Timestamp) -> pd.DataFr
     return df
 
 
+sentimentAlgo = FinbertSentiment()
+
 def get_news(ticker) -> pd.DataFrame:
 
     sentimentAlgo.set_symbol(ticker)
 
     api = API()
     return api.get_news(ticker)
-
-
-def get_earliest_date(df: pd.DataFrame) -> pd.Timestamp:
-
-    date = df['Date Time'].iloc[-1]
-    py_date = date.to_pydatetime()
-    return py_date.replace(tzinfo=EST)
 
 
 def score_news(news_df: pd.DataFrame) -> pd.DataFrame:
@@ -91,6 +84,12 @@ def plot_sentiment(df: pd.DataFrame, ticker: str) -> go.Figure:
 
     return sentimentAlgo.plot_sentiment()
 
+
+def get_earliest_date(df: pd.DataFrame) -> pd.Timestamp:
+
+    date = df['Date Time'].iloc[-1]
+    py_date = date.to_pydatetime()
+    return py_date.replace(tzinfo=EST)
 
 
 def plot_hourly_price(df, ticker) -> go.Figure:
