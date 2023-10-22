@@ -1,5 +1,4 @@
 # stock-sentiment-analysis
-Certainly! Here's a GitHub README file based on the provided text:
 
 ```markdown
 # Building News Sentiment and Stock Price Performance Analysis NLP Application With Python
