@@ -31,5 +31,4 @@ Once the user submits the ticker, the form invokes the Python Flask `/analyze` A
 
 ## Result Visualization
 
-![Trading](trading.png)
-
+![Trading](master/trading.png?raw=true)
