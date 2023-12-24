@@ -9,10 +9,10 @@ import pytz
 import requests
 from flask import Flask, render_template, request
 from plotly.utils import PlotlyJSONEncoder
+
 from config import config
 from sentiment.FinbertSentiment import FinbertSentiment
 from yahoo_api import API
-
 
 history_api_url = config.HISTORY_API_URL
 

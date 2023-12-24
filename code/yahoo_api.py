@@ -19,7 +19,7 @@ class API():
 
         respose_json = response.json()
 
-        data_dict = []
+        data_array = []
 
         if 'item' in respose_json:
             articles = respose_json['item']
@@ -28,25 +28,23 @@ class API():
                 utc_datetime = datetime.strptime(
                     article['pubDate'], '%a, %d %b %Y %H:%M:%S %z')
 
-                date_time_i_str = utc_datetime
                 title_i = article['title']
                 description_i = article['description']
                 link_i = article['link']
                 # Set column names
-                data_dict.append(
-                    [date_time_i_str, title_i, description_i, f'<a href="{link_i}">{title_i}</a>'])
+                data_array.append(
+                    [utc_datetime, title_i, description_i, f'<a href="{link_i}">{title_i}</a>'])
 
             # Set column names
             columns = ['Date Time', 'Headline',
                        'Description', 'Headline + Link']
 
-            df = pd.DataFrame(data_dict, columns=columns)
+            df = pd.DataFrame(data_array, columns=columns)
             df['Date Time'] = pd.to_datetime(
                 df['Date Time'], format=date_format, utc=True)
-            # df.set_index('Date Time', inplace=True)
+            df.set_index('Date Time', inplace=True)
             df.sort_values(by='Date Time', ascending=False)
             df.reset_index(inplace=True)
-            df.drop('index', axis=1, inplace=True)
         else:
             print(f'No data returned for ticker: {ticker}, response: {respose_json}')
             df = pd.DataFrame()
