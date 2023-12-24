@@ -1,5 +1,4 @@
 # stock-sentiment-analysis
-Certainly! Here's a GitHub README file based on the provided text:
 
 ```markdown
 # Building News Sentiment and Stock Price Performance Analysis NLP Application With Python
@@ -31,6 +30,4 @@ Once the user submits the ticker, the form invokes the Python Flask `/analyze` A
 
 
 ## Result Visualization
-
-![Trading](trading.png)
-
+![Trading](https://raw.githubusercontent.com/dshilman/stock-sentiment-analysis/master/trading.png)
