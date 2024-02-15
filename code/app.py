@@ -14,12 +14,7 @@ from config import config
 from sentiment.FinbertSentiment import FinbertSentiment
 from yahoo_api import API
 
-history_api_url = config.HISTORY_API_URL
-
-
-date_format = "%b-%d-%y %H:%M %S"
 EST = pytz.timezone('US/Eastern')
-
 
 # logging.basicConfig(filename='app_log.log',
 #                     encoding='utf-8', level=logging.DEBUG)
@@ -28,39 +23,8 @@ app = Flask(__name__)
 
 def get_price_history(ticker: str, earliest_datetime: pd.Timestamp) -> pd.DataFrame:
 
-    querystring = {"symbol": {ticker},
-                   "interval": "5m", "diffandsplits": "false"}
-    response = requests.get(url=history_api_url,
-                            headers=config.headers, params=querystring)
-
-    respose_json = response.json()
-
-    price_history = respose_json['items']
-    data_dict = []
-
-    print(f"earliest_datetime: {earliest_datetime}")
-    for stock_price in price_history.values():
-
-        date_time_num = stock_price["date_utc"]
-        utc_datetime = datetime.fromtimestamp(date_time_num, tz=pytz.utc)
-        est_datetime = utc_datetime.astimezone(tz=EST)
-
-        if est_datetime < earliest_datetime:
-            continue
-
-        price = stock_price["open"]
-        data_dict.append([est_datetime.strftime(date_format), price])
-
-    # Set column names
-    columns = ['Date Time', 'Price']
-    df = pd.DataFrame(data_dict, columns=columns)
-    df['Date Time'] = pd.to_datetime(df['Date Time'], format=date_format)
-    df.sort_values(by='Date Time', ascending=True)
-    df.reset_index(inplace=True)
-    df.drop('index', axis=1, inplace=True)
-
-    return df
-
+    return API.get_price_history(ticker, earliest_datetime)
+    
 
 sentimentAlgo = FinbertSentiment()
 
@@ -68,8 +32,7 @@ def get_news(ticker) -> pd.DataFrame:
 
     sentimentAlgo.set_symbol(ticker)
 
-    api = API()
-    return api.get_news(ticker)
+    return API.get_news(ticker)
 
 
 def score_news(news_df: pd.DataFrame) -> pd.DataFrame:
@@ -134,11 +97,12 @@ def convert_headline_to_link(df: pd.DataFrame) -> pd.DataFrame:
 
     # df['Headline'] = df['Headline'].apply(lambda title: f'<a href="{title[1]}">{title[0]}</a>')
 
-    df['Headline'] = df['Headline + Link']
-    df.drop(columns = ['sentiment', 'Headline + Link'], inplace=True, axis=1)
+    df['Headline'] = df['title + link']
+    df.drop(columns = ['sentiment', 'title + link'], inplace=True, axis=1)
 
     return df
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=81, debug=True, load_dotenv=True)
+

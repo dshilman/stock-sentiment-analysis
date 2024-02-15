@@ -12,3 +12,4 @@ python-dotenv
 torch
 transformers
 xformers
+git+https://github.com/facebookresearch/xformers#installing-xformers

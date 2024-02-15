@@ -1,7 +1,8 @@
+import os
 class config():
-    NEWS_API_URL = "https://mboum-finance.p.rapidapi.com/ne/news/"
-    HISTORY_API_URL = "https://mboum-finance.p.rapidapi.com/hi/history"
-    API_Key = "8ec81782bfmsh7a938bdca74feafp1a037djsncb7e891cf291"
+    NEWS_API_URL = "https://mboum-finance.p.rapidapi.com/v1/markets/news"
+    HISTORY_API_URL = "https://mboum-finance.p.rapidapi.com/v1/markets/stock/history"
+    API_Key = os.environ.get('RAPIDAPI_KEY')
     RapidAPI_Host = "mboum-finance.p.rapidapi.com"
 
     headers = {

@@ -3,7 +3,7 @@ name: Push-to-DEMO-EC2
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   deploy:

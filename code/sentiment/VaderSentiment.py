@@ -16,7 +16,7 @@ class VaderSentiment (SentimentAnalysisBase):
 
     def calc_sentiment_score(self):
 
-        self.df['sentiment'] = self.df['Headline'].apply(
+        self.df['sentiment'] = self.df['title'].apply(
             self.vader.polarity_scores)
         self.df['sentiment_score'] = self.df['sentiment'].apply(
             lambda x: x['compound'])
