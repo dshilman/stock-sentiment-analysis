@@ -1,16 +1,12 @@
 import json
-import os
-from datetime import datetime
 
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import pytz
-import requests
 from flask import Flask, render_template, request
 from plotly.utils import PlotlyJSONEncoder
 
-from config import config
 from sentiment.FinbertSentiment import FinbertSentiment
 from yahoo_api import API
 
@@ -94,8 +90,6 @@ def analyze():
 
 
 def convert_headline_to_link(df: pd.DataFrame) -> pd.DataFrame:
-
-    # df['Headline'] = df['Headline'].apply(lambda title: f'<a href="{title[1]}">{title[0]}</a>')
 
     df['Headline'] = df['title + link']
     df.drop(columns = ['sentiment', 'title + link'], inplace=True, axis=1)
