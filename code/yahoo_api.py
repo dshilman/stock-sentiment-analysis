@@ -34,8 +34,9 @@ class API():
                 description_i = article['description']
                 link_i = article['link']
                 # Set column names
-                data_array.append(
-                    [utc_datetime, title_i, description_i, f'<a href="{link_i}">{title_i}</a>'])
+                if ticker in title_i or ticker in description_i:
+                    data_array.append(
+                        [utc_datetime, title_i, description_i, f'<a href="{link_i}">{title_i}</a>'])
 
             # Set column names
             columns = ['Date Time', 'title',

@@ -91,8 +91,10 @@ def analyze():
 
 def convert_headline_to_link(df: pd.DataFrame) -> pd.DataFrame:
 
-    df['Headline'] = df['title + link']
-    df.drop(columns = ['sentiment', 'title + link'], inplace=True, axis=1)
+    df.insert(2, 'Headline', df['title + link'])
+
+    # df['Headline'] = df['title + link']
+    df.drop(columns = ['sentiment', 'title + link', 'title'], inplace=True, axis=1)
 
     return df
 

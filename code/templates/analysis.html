@@ -15,16 +15,18 @@
 	<div class="container mx-auto py-8">
 		<div class="bg-white shadow-lg rounded-lg p-8">
 			<h1 class="text-3xl font-bold mb-4">Stock Sentiment Analysis for {{ticker}}</h1>
-			<div class="htmx-indicator h-4 w-2 bg-blue-500 invisible rounded-full"></div>
-			<table>
+			<div class="flex items-center space-x-4"></div>
+			<table align="center">
 				<tr>
 					<td>
-						<div class="flex items-center space-x-4">
+						<div class="flex items-center space-x-2">
 							<div id="chart" class="chart"></div>
 						</div>
 					</td>
+				</tr>
+				<tr>
 					<td>
-						<div class="flex items-center space-x-4">
+						<div class="flex items-center space-x-2">
 							<div id="chart2" class="chart2"></div>
 						</div>
 					</td>
