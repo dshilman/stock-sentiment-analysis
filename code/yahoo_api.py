@@ -1,74 +1,147 @@
+"""Client for the Mboum Finance API (news and price history).
+
+Provides :class:`API`, a small collection of static methods that fetch news
+articles and intraday price history for a given ticker and return them as
+tidy :class:`pandas.DataFrame` objects.
+"""
+
 from datetime import datetime
-import pandas as pd
-import requests
-from config import config
+
 import pandas as pd
 import pytz
+import requests
 
-date_format = "%b-%d-%y %H:%M %S"
-EST = pytz.timezone('US/Eastern')
-class API():
-    def __init__(self) -> None:
-        pass
+from config import Config
 
-    def get_news(ticker):
-        date_format = "%b-%d-%y %H:%M %S"
+DATE_FORMAT = "%b-%d-%y %H:%M %S"
+EST = pytz.timezone("US/Eastern")
+REQUEST_TIMEOUT_SECONDS = 30
 
-        querystring = {"symbol": f"{ticker}"}
 
-        response = requests.get(
-            url=config.NEWS_API_URL, headers=config.headers, params=querystring)
+class API:
+    """Static client methods for the Mboum Finance endpoints."""
 
-        respose_json = response.json()
-        # print(respose_json)
-        data_array = []
+    @staticmethod
+    def get_news(ticker: str) -> pd.DataFrame:
+        """Fetch recent news articles mentioning ``ticker``.
 
-        if 'body' in respose_json:
-            articles = respose_json['body']
-            for article in articles:
-                # Mon, 05 Jun 2023 20:46:19 +0000
+        Args:
+            ticker: The stock symbol to search for (e.g. ``"AAPL"``).
+
+        Returns:
+            A DataFrame with columns ``Date Time``, ``title``, ``Description``
+            and ``title + link``. Empty if no matching articles are found.
+        """
+        querystring = {"symbol": ticker}
+
+        try:
+            response = requests.get(
+                url=Config.NEWS_API_URL,
+                headers=Config.get_headers(),
+                params=querystring,
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            )
+            response.raise_for_status()
+            response_json = response.json()
+        except requests.RequestException as exc:
+            print(f"Failed to fetch news for ticker '{ticker}': {exc}")
+            return pd.DataFrame()
+        except ValueError as exc:
+            print(f"Invalid JSON in news response for ticker '{ticker}': {exc}")
+            return pd.DataFrame()
+
+        articles = response_json.get("body")
+        if not articles:
+            print(
+                f"No news data returned for ticker '{ticker}', "
+                f"response: {response_json}"
+            )
+            return pd.DataFrame()
+
+        data_rows = []
+        for article in articles:
+            # Example pubDate: "Mon, 05 Jun 2023 20:46:19 +0000"
+            try:
                 utc_datetime = datetime.strptime(
-                    article['pubDate'], '%a, %d %b %Y %H:%M:%S %z')
+                    article["pubDate"], "%a, %d %b %Y %H:%M:%S %z"
+                )
+            except (KeyError, ValueError) as exc:
+                print(f"Skipping article with invalid date: {exc}")
+                continue
 
-                title_i = article['title']
-                description_i = article['description']
-                link_i = article['link']
-                # Set column names
-                if ticker in title_i or ticker in description_i:
-                    data_array.append(
-                        [utc_datetime, title_i, description_i, f'<a href="{link_i}">{title_i}</a>'])
+            title = article.get("title", "")
+            description = article.get("description", "")
+            link = article.get("link", "")
 
-            # Set column names
-            columns = ['Date Time', 'title',
-                       'Description', 'title + link']
+            if ticker in title or ticker in description:
+                data_rows.append(
+                    [
+                        utc_datetime,
+                        title,
+                        description,
+                        f'<a href="{link}">{title}</a>',
+                    ]
+                )
 
-            df = pd.DataFrame(data_array, columns=columns)
-            df['Date Time'] = pd.to_datetime(
-                df['Date Time'], format=date_format, utc=True)
-            df.set_index('Date Time', inplace=True)
-            df.sort_values(by='Date Time', ascending=False)
-            df.reset_index(inplace=True)
-        else:
-            print(f'No data returned for ticker: {ticker}, response: {respose_json}')
-            df = pd.DataFrame()
+        columns = ["Date Time", "title", "Description", "title + link"]
+        df = pd.DataFrame(data_rows, columns=columns)
+        if df.empty:
+            return df
 
+        df["Date Time"] = pd.to_datetime(df["Date Time"], utc=True)
+        df.sort_values(by="Date Time", ascending=False, inplace=True)
+        df.reset_index(drop=True, inplace=True)
         return df
 
-    def get_price_history(ticker: str, earliest_datetime: pd.Timestamp) -> pd.DataFrame:
+    @staticmethod
+    def get_price_history(
+        ticker: str, earliest_datetime: datetime
+    ) -> pd.DataFrame:
+        """Fetch intraday (5-minute) price history for ``ticker``.
 
-        querystring = {"symbol": {ticker},
-                    "interval": "5m", "diffandsplits": "false"}
-        
-        response = requests.get(url=config.HISTORY_API_URL, headers=config.headers, params=querystring)
+        Args:
+            ticker: The stock symbol to fetch prices for.
+            earliest_datetime: Timezone-aware cutoff; prices before this
+                moment are excluded.
 
-        respose_json = response.json()
+        Returns:
+            A DataFrame with columns ``Date Time`` and ``Price``. Empty if no
+            data is returned.
+        """
+        querystring = {
+            "symbol": ticker,
+            "interval": "5m",
+            "diffandsplits": "false",
+        }
 
-        price_history = respose_json['body']
-        data_dict = []
+        try:
+            response = requests.get(
+                url=Config.HISTORY_API_URL,
+                headers=Config.get_headers(),
+                params=querystring,
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            )
+            response.raise_for_status()
+            response_json = response.json()
+        except requests.RequestException as exc:
+            print(f"Failed to fetch price history for ticker '{ticker}': {exc}")
+            return pd.DataFrame()
+        except ValueError as exc:
+            print(
+                f"Invalid JSON in price response for ticker '{ticker}': {exc}"
+            )
+            return pd.DataFrame()
 
-        print(f"earliest_datetime: {earliest_datetime}")
+        price_history = response_json.get("body")
+        if not price_history:
+            print(
+                f"No price data returned for ticker '{ticker}', "
+                f"response: {response_json}"
+            )
+            return pd.DataFrame()
+
+        data_rows = []
         for stock_price in price_history.values():
-
             date_time_num = stock_price["date_utc"]
             utc_datetime = datetime.fromtimestamp(date_time_num, tz=pytz.utc)
             est_datetime = utc_datetime.astimezone(tz=EST)
@@ -76,15 +149,16 @@ class API():
             if est_datetime < earliest_datetime:
                 continue
 
-            price = stock_price["open"]
-            data_dict.append([est_datetime.strftime(date_format), price])
+            data_rows.append(
+                [est_datetime.strftime(DATE_FORMAT), stock_price["open"]]
+            )
 
-        # Set column names
-        columns = ['Date Time', 'Price']
-        df = pd.DataFrame(data_dict, columns=columns)
-        df['Date Time'] = pd.to_datetime(df['Date Time'], format=date_format)
-        df.sort_values(by='Date Time', ascending=True)
-        df.reset_index(inplace=True)
-        df.drop('index', axis=1, inplace=True)
+        columns = ["Date Time", "Price"]
+        df = pd.DataFrame(data_rows, columns=columns)
+        if df.empty:
+            return df
 
+        df["Date Time"] = pd.to_datetime(df["Date Time"], format=DATE_FORMAT)
+        df.sort_values(by="Date Time", ascending=True, inplace=True)
+        df.reset_index(drop=True, inplace=True)
         return df
